@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бубакойн Кликер</title>
+    <style>
+        /* Все стили остаются такими же, как в предыдущем коде */
+        /* ... */
+    </style>
+</head>
+<body>
+    <!-- Весь HTML остается таким же, как в предыдущем коде -->
+    <!-- ... -->
+
+    <script>
+        // Игровые переменные
+        let coins = 0;
+        let totalCoins = 0;
+        let clicks = 0;
+        let coinsPerClick = 1;
+        let coinsPerSecond = 0;
+        let prestigeLevel = 0;
+        let prestigePoints = 0;
+        let prestigeMultiplier = 1;
+        let lastSave = 0;
+
+        // Анти-автокликер
+        let lastClickTime = 0;
+        let clickTimes = [];
+        let cheatWarningCount = 0;
+        let cheatDetected = false;
+
+        // Магазин и улучшения
+        const shopItems = [
+            { id: 1, name: "Малый бубакойнер", price: 15, cps: 0.1, owned: 0, image: "https://clck.ru/3Lx2X2" },
+            { id: 2, name: "Бубакойный вентилятор", price: 100, cps: 1, owned: 0, image: "https://clck.ru/3Lx2X2" },
+            { id: 3, name: "Бубакойная ферма", price: 1100, cps: 8, owned: 0, image: "https://clck.ru/3Lx2X2" },
+            { id: 4, name: "Бубакойный завод", price: 12000, cps: 47, owned: 0, image: "https://clck.ru/3Lx2X2" },
+            { id: 5, name: "Бубакойный банк", price: 130000, cps: 260, owned: 0, image: "https://clck.ru/3Lx2X2" },
+            { id: 6, name: "Бубакойный портал", price: 1400000, cps: 1400, owned: 0, image: "https://clck.ru/3Lx2X2" },
+            { id: 7, name: "Бубакойная машина времени", price: 20000000, cps: 7800, owned: 0, image: "https://clck.ru/3Lx2X2" },
+            { id: 8, name: "Бубакойная галактика", price: 330000000, cps: 44000, owned: 0, image: "https://clck.ru/3Lx2X2" }
+        ];
+
+        const upgrades = [
+            { id: 1, name: "Улучшенный клик", price: 100, description: "Увеличивает доход с клика в 2 раза", multiplier: 2, owned: false, image: "https://clck.ru/3Lx2X2" },
+            { id: 2, name: "Золотой палец", price: 500, description: "Увеличивает доход с клика в 3 раза", multiplier: 3, owned: false, image: "https://clck.ru/3Lx2X2" },
+            { id: 3, name: "Платиновый палец", price: 3000, description: "Увеличивает доход с клика в 5 раз", multiplier: 5, owned: false, image: "https://clck.ru/3Lx2X2" },
+            { id: 4, name: "Алмазный палец", price: 10000, description: "Увеличивает доход с клика в 10 раз", multiplier: 10, owned: false, image: "https://clck.ru/3Lx2X2" },
+            { id: 5, name: "Бубакойный мастер", price: 50000, description: "Все источники дохода работают на 50% эффективнее", multiplier: 1.5, owned: false, image: "https://clck.ru/3Lx2X2" }
+        ];
+
+        // Достижения
+        const achievements = [
+            { id: 1, name: "Первые шаги", description: "Заработайте 100 бубакойнов", condition: 100, unlocked: false },
+            { id: 2, name: "Начинающий бубакойнер", description: "Заработайте 1,000 бубакойнов", condition: 1000, unlocked: false },
+            { id: 3, name: "Опытный бубакойнер", description: "Заработайте 10,000 бубакойнов", condition: 10000, unlocked: false },
+            { id: 4, name: "Профессионал", description: "Заработайте 100,000 бубакойнов", condition: 100000, unlocked: false },
+            { id: 5, name: "Бубакойный магнат", description: "Заработайте 1,000,000 бубакойнов", condition: 1000000, unlocked: false },
+            { id: 6, name: "Кликер", description: "Сделайте 100 кликов", condition: 100, clicks: true, unlocked: false },
+            { id: 7, name: "Маниакальный кликер", description: "Сделайте 500 кликов", condition: 500, clicks: true, unlocked: false },
+            { id: 8, name: "Автоматизатор", description: "Купите первый автоматический генератор", condition: 1, generator: true, unlocked: false },
+            { id: 9, name: "Престиж", description: "Проведите первый престиж", condition: 1, prestige: true, unlocked: false }
+        ];
+
+        // DOM элементы
+        const clicker = document.getElementById('clicker');
+        const coinsDisplay = document.getElementById('coins');
+        const cpsDisplay = document.getElementById('cps');
+        const totalClicksDisplay = document.getElementById('total-clicks');
+        const totalCoinsDisplay = document.getElementById('total-coins');
+        const coinsPerClickDisplay = document.getElementById('coins-per-click');
+        const prestigeLevelDisplay = document.getElementById('prestige-level');
+        const shopItemsContainer = document.getElementById('shop-items');
+        const upgradesContainer = document.getElementById('upgrades-items');
+        const notification = document.getElementById('notification');
+        const notificationAmount = document.getElementById('notification-amount');
+        const achievement = document.getElementById('achievement');
+        const achievementTitle = document.getElementById('achievement-title');
+        const achievementDesc = document.getElementById('achievement-desc');
+        const prestigeBtn = document.getElementById('prestige-btn');
+        const prestigeMultiplierDisplay = document.getElementById('prestige-multiplier');
+        const prestigeRequirementDisplay = document.getElementById('prestige-requirement');
+        const prestigeBonusDisplay = document.getElementById('prestige-bonus');
+        const antiCheatWarning = document.getElementById('antiCheatWarning');
+
+        // Инициализация магазина
+        function initShop() {
+            shopItemsContainer.innerHTML = '';
+            shopItems.forEach(item => {
+                const cost = Math.floor(item.price * Math.pow(1.15, item.owned));
+                const itemElement = document.createElement('div');
+                itemElement.className = 'shop-item';
+                itemElement.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}">
+                    <h3>${item.name}</h3>
+                    <p>Производит ${(item.cps * prestigeMultiplier).toFixed(1)} бубакойнов/сек</p>
+                    <p>Количество: ${item.owned}</p>
+                    <p>Цена: ${formatNumber(cost)}</p>
+                    <button class="buy-btn" data-id="${item.id}" 
+                        ${coins < cost ? 'disabled' : ''}>
+                        Купить
+                    </button>
+                `;
+                shopItemsContainer.appendChild(itemElement);
+            });
+
+            // Добавляем обработчики событий для всех кнопок покупки
+            document.querySelectorAll('.shop .buy-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const itemId = parseInt(this.getAttribute('data-id'));
+                    buyShopItem(itemId);
+                });
+            });
+        }
+
+        // Инициализация улучшений
+        function initUpgrades() {
+            upgradesContainer.innerHTML = '';
+            upgrades.forEach(upgrade => {
+                if (!upgrade.owned) {
+                    const upgradeElement = document.createElement('div');
+                    upgradeElement.className = 'shop-item';
+                    upgradeElement.innerHTML = `
+                        <img src="${upgrade.image}" alt="${upgrade.name}">
+                        <h3>${upgrade.name}</h3>
+                        <p>${upgrade.description}</p>
+                        <p>Цена: ${formatNumber(upgrade.price)}</p>
+                        <button class="buy-btn" data-id="${upgrade.id}" 
+                            ${coins < upgrade.price ? 'disabled' : ''}>
+                            Купить
+                        </button>
+                    `;
+                    upgradesContainer.appendChild(upgradeElement);
+                }
+            });
+
+            // Добавляем обработчики событий для всех кнопок покупки улучшений
+            document.querySelectorAll('.upgrades .buy-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const upgradeId = parseInt(this.getAttribute('data-id'));
+                    buyUpgrade(upgradeId);
+                });
+            });
+        }
+
+        // Покупка предмета в магазине
+        function buyShopItem(id) {
+            const item = shopItems.find(i => i.id === id);
+            if (!item) return;
+
+            const cost = Math.floor(item.price * Math.pow(1.15, item.owned));
+            
+            if (coins >= cost) {
+                coins -= cost;
+                item.owned++;
+                updateCoins();
+                calculateCPS();
+                initShop(); // Перерисовываем магазин
+                showNotification(`Куплен ${item.name}!`, cost);
+                
+                // Проверка достижений
+                checkAchievements();
+            }
+        }
+
+        // Покупка улучшения
+        function buyUpgrade(id) {
+            const upgrade = upgrades.find(u => u.id === id);
+            if (!upgrade) return;
+            
+            if (!upgrade.owned && coins >= upgrade.price) {
+                coins -= upgrade.price;
+                upgrade.owned = true;
+                
+                if (upgrade.id <= 4) {
+                    coinsPerClick *= upgrade.multiplier;
+                } else if (upgrade.id === 5) {
+                    // Улучшение для всех генераторов
+                    prestigeMultiplier *= upgrade.multiplier;
+                    calculateCPS();
+                }
+                
+                updateCoins();
+                initUpgrades(); // Перерисовываем улучшения
+                showNotification(`Куплено улучшение: ${upgrade.name}!`, upgrade.price);
+                
+                // Проверка достижений
+                checkAchievements();
+            }
+        }
+
+        // Остальные функции остаются такими же, как в предыдущем коде
+        // ...
+
+        // Инициализация игры
+        function initGame() {
+            // Попытка загрузить сохранение при запуске
+            loadGame();
+            
+            initShop();
+            initUpgrades();
+            updateCoins();
+            calculateCPS();
+            checkPrestige();
+            
+            // Запуск игрового цикла (10 раз в секунду)
+            setInterval(gameLoop, 100);
+        }
+
+        // Запуск игры при загрузке страницы
+        window.onload = initGame;
+    </script>
+</body>
+</html>
